@@ -26,10 +26,11 @@ namespace FileViewer
             _openTabs = new ObservableCollection<TabItem>();
             
             // Add current directory as the first tab
+            var currentDirPath = Environment.CurrentDirectory;
             var currentDir = new TabItem
             {
-                Name = "Current Directory",
-                FullPath = Environment.CurrentDirectory,
+                Name = Path.GetFileName(currentDirPath) ?? currentDirPath,
+                FullPath = currentDirPath,
                 IsDirectory = true,
                 IsActive = true
             };
