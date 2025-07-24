@@ -222,6 +222,15 @@ namespace FileViewer
                 tab.IsActive = tab == activeTab;
             }
             _currentTab = activeTab;
+            UpdateWindowTitle();
+        }
+
+        private void UpdateWindowTitle()
+        {
+            if (_currentTab != null)
+            {
+                Title = _currentTab.FullPath;
+            }
         }
 
         private bool IsTextFile(string extension)
