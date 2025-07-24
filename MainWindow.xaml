@@ -26,18 +26,13 @@
                          Margin="5">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="{Binding IsActive, Converter={StaticResource BoolToBackgroundConverter}}"
-                                    CornerRadius="3"
-                                    Margin="2"
-                                    Padding="8,5">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Icon}" FontSize="16" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding DisplayName}" 
-                                               FontSize="12"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding FullPath}"/>
-                                </StackPanel>
-                            </Border>
+                            <StackPanel Orientation="Horizontal" Margin="8,5">
+                                <TextBlock Text="{Binding Icon}" FontSize="16" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding DisplayName}" 
+                                           FontSize="12"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding FullPath}"/>
+                            </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

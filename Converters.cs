@@ -10,7 +10,7 @@ namespace FileViewer
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is bool isActive && isActive)
-                return new SolidColorBrush(Color.FromRgb(0, 120, 215)); // Blue background for active
+                return new SolidColorBrush(Color.FromRgb(220, 220, 220)); // Light gray background for active
             return new SolidColorBrush(Colors.Transparent);
         }
 
