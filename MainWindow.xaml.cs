@@ -39,6 +39,7 @@ namespace FileViewer
             
             TabListBox.ItemsSource = _openTabs;
             DisplayTab(currentDir);
+            UpdateWindowTitle();
         }
 
         private ObservableCollection<FileItem> LoadDirectoryContents(string directoryPath)
