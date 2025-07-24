@@ -90,18 +90,11 @@ namespace FileViewer
             }
         }
 
-        private void DirectoryViewer_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void DirectoryViewer_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (DirectoryViewer.SelectedItem is FileItem selectedItem)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FileItem selectedItem)
             {
-                if (selectedItem.IsDirectory)
-                {
-                    OpenTab(selectedItem.FullPath, selectedItem.Name, true);
-                }
-                else
-                {
-                    OpenTab(selectedItem.FullPath, selectedItem.Name, false);
-                }
+                OpenTab(selectedItem.FullPath, selectedItem.Name, selectedItem.IsDirectory);
             }
         }
 

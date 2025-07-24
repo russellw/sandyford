@@ -79,7 +79,7 @@
                         
                         <!-- Directory browser -->
                         <ListView x:Name="DirectoryViewer" 
-                                  MouseDoubleClick="DirectoryViewer_MouseDoubleClick"
+                                  SelectionChanged="DirectoryViewer_SelectionChanged"
                                   Visibility="Collapsed">
                             <ListView.View>
                                 <GridView>
