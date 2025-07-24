@@ -5,8 +5,8 @@ namespace FileViewer
 {
     public class FileItem
     {
-        public string Name { get; set; }
-        public string FullPath { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string FullPath { get; set; } = string.Empty;
         public bool IsDirectory { get; set; }
         public ObservableCollection<FileItem> Children { get; set; }
 
@@ -25,7 +25,7 @@ namespace FileViewer
 
         private string GetFileIcon(string filePath)
         {
-            var extension = Path.GetExtension(filePath).ToLower();
+            var extension = Path.GetExtension(filePath)?.ToLower() ?? string.Empty;
             return extension switch
             {
                 ".txt" or ".log" or ".md" => "📄",

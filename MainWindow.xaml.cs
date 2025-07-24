@@ -11,7 +11,7 @@ namespace FileViewer
 {
     public partial class MainWindow : Window
     {
-        private ObservableCollection<FileItem> _rootItems;
+        private ObservableCollection<FileItem> _rootItems = null!;
 
         public MainWindow()
         {
@@ -94,7 +94,7 @@ namespace FileViewer
             {
                 HideAllViewers();
                 
-                var extension = Path.GetExtension(filePath).ToLower();
+                var extension = Path.GetExtension(filePath)?.ToLower() ?? string.Empty;
                 
                 if (IsTextFile(extension))
                 {
@@ -126,13 +126,23 @@ namespace FileViewer
 
         private void DisplayImageFile(string filePath)
         {
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.UriSource = new Uri(filePath);
-            bitmap.EndInit();
-            
-            ImageViewer.Source = bitmap;
-            ImageViewer.Visibility = Visibility.Visible;
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(filePath);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                
+                ImageViewer.Source = bitmap;
+                ImageViewer.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                PlaceholderText.Text = $"Error loading image: {ex.Message}";
+                PlaceholderText.Visibility = Visibility.Visible;
+            }
         }
 
         private void HideAllViewers()
