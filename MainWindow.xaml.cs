@@ -5,13 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace FileViewer
 {
     public partial class MainWindow : Window
     {
-        private ObservableCollection<FileItem> _rootItems = null!;
+        private ObservableCollection<TabItem> _openTabs = null!;
+        private TabItem? _currentTab = null;
 
         public MainWindow()
         {
@@ -21,33 +23,34 @@ namespace FileViewer
 
         private void InitializeFileTree()
         {
-            _rootItems = new ObservableCollection<FileItem>();
+            _openTabs = new ObservableCollection<TabItem>();
             
-            var drives = DriveInfo.GetDrives().Where(d => d.IsReady);
-            foreach (var drive in drives)
+            // Add current directory as the first tab
+            var currentDir = new TabItem
             {
-                var driveItem = new FileItem
-                {
-                    Name = drive.Name,
-                    FullPath = drive.Name,
-                    IsDirectory = true
-                };
-                LoadDirectoryChildren(driveItem);
-                _rootItems.Add(driveItem);
-            }
+                Name = "Current Directory",
+                FullPath = Environment.CurrentDirectory,
+                IsDirectory = true,
+                IsActive = true
+            };
             
-            FileTreeView.ItemsSource = _rootItems;
+            _openTabs.Add(currentDir);
+            _currentTab = currentDir;
+            
+            TabListBox.ItemsSource = _openTabs;
+            DisplayTab(currentDir);
         }
 
-        private void LoadDirectoryChildren(FileItem parent)
+        private ObservableCollection<FileItem> LoadDirectoryContents(string directoryPath)
         {
+            var items = new ObservableCollection<FileItem>();
+            
             try
             {
-                if (!Directory.Exists(parent.FullPath))
-                    return;
+                if (!Directory.Exists(directoryPath))
+                    return items;
 
-                var directories = Directory.GetDirectories(parent.FullPath)
-                    .Take(50)
+                var directories = Directory.GetDirectories(directoryPath)
                     .Select(dir => new FileItem
                     {
                         Name = Path.GetFileName(dir),
@@ -55,8 +58,7 @@ namespace FileViewer
                         IsDirectory = true
                     });
 
-                var files = Directory.GetFiles(parent.FullPath)
-                    .Take(100)
+                var files = Directory.GetFiles(directoryPath)
                     .Select(file => new FileItem
                     {
                         Name = Path.GetFileName(file),
@@ -64,12 +66,9 @@ namespace FileViewer
                         IsDirectory = false
                     });
 
-                parent.Children.Clear();
-                foreach (var item in directories.Concat(files))
+                foreach (var item in directories.Concat(files).OrderBy(i => !i.IsDirectory).ThenBy(i => i.Name))
                 {
-                    if (item.IsDirectory)
-                        LoadDirectoryChildren(item);
-                    parent.Children.Add(item);
+                    items.Add(item);
                 }
             }
             catch (UnauthorizedAccessException)
@@ -78,22 +77,67 @@ namespace FileViewer
             catch (Exception)
             {
             }
+            
+            return items;
         }
 
-        private void FileTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        private void TabListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.NewValue is FileItem selectedItem && !selectedItem.IsDirectory)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is TabItem selectedTab)
             {
-                DisplayFile(selectedItem.FullPath);
+                SetActiveTab(selectedTab);
+                DisplayTab(selectedTab);
             }
+        }
+
+        private void DirectoryViewer_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (DirectoryViewer.SelectedItem is FileItem selectedItem)
+            {
+                if (selectedItem.IsDirectory)
+                {
+                    OpenTab(selectedItem.FullPath, selectedItem.Name, true);
+                }
+                else
+                {
+                    OpenTab(selectedItem.FullPath, selectedItem.Name, false);
+                }
+            }
+        }
+
+        private void DisplayTab(TabItem tab)
+        {
+            try
+            {
+                HideAllViewers();
+                
+                if (tab.IsDirectory)
+                {
+                    DisplayDirectory(tab.FullPath);
+                }
+                else
+                {
+                    DisplayFile(tab.FullPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                PlaceholderText.Text = $"Error loading content: {ex.Message}";
+                PlaceholderText.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void DisplayDirectory(string directoryPath)
+        {
+            var items = LoadDirectoryContents(directoryPath);
+            DirectoryViewer.ItemsSource = items;
+            DirectoryViewer.Visibility = Visibility.Visible;
         }
 
         private void DisplayFile(string filePath)
         {
             try
             {
-                HideAllViewers();
-                
                 var extension = Path.GetExtension(filePath)?.ToLower() ?? string.Empty;
                 
                 if (IsTextFile(extension))
@@ -149,7 +193,42 @@ namespace FileViewer
         {
             TextViewer.Visibility = Visibility.Collapsed;
             ImageViewer.Visibility = Visibility.Collapsed;
+            DirectoryViewer.Visibility = Visibility.Collapsed;
             PlaceholderText.Visibility = Visibility.Collapsed;
+        }
+
+        private void OpenTab(string path, string name, bool isDirectory)
+        {
+            // Check if tab already exists
+            var existingTab = _openTabs.FirstOrDefault(t => t.FullPath.Equals(path, StringComparison.OrdinalIgnoreCase));
+            if (existingTab != null)
+            {
+                SetActiveTab(existingTab);
+                TabListBox.SelectedItem = existingTab;
+                return;
+            }
+
+            // Create new tab
+            var newTab = new TabItem
+            {
+                Name = name,
+                FullPath = path,
+                IsDirectory = isDirectory,
+                IsActive = false
+            };
+
+            _openTabs.Add(newTab);
+            SetActiveTab(newTab);
+            TabListBox.SelectedItem = newTab;
+        }
+
+        private void SetActiveTab(TabItem activeTab)
+        {
+            foreach (var tab in _openTabs)
+            {
+                tab.IsActive = tab == activeTab;
+            }
+            _currentTab = activeTab;
         }
 
         private bool IsTextFile(string extension)
@@ -174,7 +253,8 @@ namespace FileViewer
 
             if (openFileDialog.ShowDialog() == true)
             {
-                DisplayFile(openFileDialog.FileName);
+                var fileName = Path.GetFileName(openFileDialog.FileName);
+                OpenTab(openFileDialog.FileName, fileName, false);
             }
         }
 
