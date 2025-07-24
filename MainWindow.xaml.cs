@@ -91,9 +91,9 @@ namespace FileViewer
             }
         }
 
-        private void DirectoryViewer_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void DirectoryItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FileItem selectedItem)
+            if (sender is Border border && border.DataContext is FileItem selectedItem)
             {
                 OpenTab(selectedItem.FullPath, selectedItem.Name, selectedItem.IsDirectory);
             }

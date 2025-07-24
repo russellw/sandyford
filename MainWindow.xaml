@@ -59,32 +59,38 @@
                                Visibility="Collapsed"/>
                         
                         <!-- Directory browser -->
-                        <ListView x:Name="DirectoryViewer" 
-                                  SelectionChanged="DirectoryViewer_SelectionChanged"
-                                  Visibility="Collapsed">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="Name" Width="300">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding Icon}" FontSize="16" Margin="0,0,8,0"/>
-                                                    <TextBlock Text="{Binding Name}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Type" Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding IsDirectory, Converter={StaticResource BoolToTypeConverter}}"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Path" Width="400" DisplayMemberBinding="{Binding FullPath}"/>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
+                        <ItemsControl x:Name="DirectoryViewer" 
+                                      Visibility="Collapsed">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="10" 
+                                            Background="Transparent"
+                                            Width="80"
+                                            Height="80"
+                                            Cursor="Hand"
+                                            MouseLeftButtonUp="DirectoryItem_MouseLeftButtonUp">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Icon}" 
+                                                       FontSize="32" 
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,0,0,5"/>
+                                            <TextBlock Text="{Binding Name}" 
+                                                       FontSize="10"
+                                                       TextAlignment="Center"
+                                                       TextWrapping="Wrap"
+                                                       MaxWidth="70"
+                                                       HorizontalAlignment="Center"
+                                                       ToolTip="{Binding Name}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                         
                         <!-- Placeholder text -->
                         <TextBlock x:Name="PlaceholderText" 
