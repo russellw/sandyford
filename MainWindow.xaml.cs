@@ -1,8 +1,12 @@
+using ICSharpCode.AvalonEdit.Highlighting;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -135,7 +139,11 @@ namespace FileViewer
             {
                 var extension = Path.GetExtension(filePath)?.ToLower() ?? string.Empty;
                 
-                if (IsTextFile(extension))
+                if (IsCodeFile(extension))
+                {
+                    DisplayCodeFile(filePath, extension);
+                }
+                else if (IsTextFile(extension))
                 {
                     DisplayTextFile(filePath);
                 }
@@ -143,10 +151,21 @@ namespace FileViewer
                 {
                     DisplayImageFile(filePath);
                 }
+                else if (IsKnownBinaryFile(extension))
+                {
+                    DisplayBinaryFileStats(filePath, extension);
+                }
                 else
                 {
-                    PlaceholderText.Text = $"Cannot preview files of type: {extension}";
-                    PlaceholderText.Visibility = Visibility.Visible;
+                    // Check if file is text or binary
+                    if (IsTextFileContent(filePath))
+                    {
+                        DisplayTextFile(filePath);
+                    }
+                    else
+                    {
+                        DisplayBinaryFileStats(filePath, extension);
+                    }
                 }
             }
             catch (Exception ex)
@@ -186,8 +205,10 @@ namespace FileViewer
 
         private void HideAllViewers()
         {
+            CodeEditor.Visibility = Visibility.Collapsed;
             TextViewer.Visibility = Visibility.Collapsed;
             ImageViewer.Visibility = Visibility.Collapsed;
+            StatsScrollViewer.Visibility = Visibility.Collapsed;
             DirectoryViewer.Visibility = Visibility.Collapsed;
             PlaceholderText.Visibility = Visibility.Collapsed;
         }
@@ -235,16 +256,178 @@ namespace FileViewer
             }
         }
 
+        private bool IsCodeFile(string extension)
+        {
+            string[] codeExtensions = { ".cs", ".js", ".ts", ".html", ".css", ".xml", ".json", ".yml", ".yaml", ".cpp", ".c", ".h", ".java", ".py", ".rb", ".php", ".go", ".rs", ".sql" };
+            return codeExtensions.Contains(extension);
+        }
+
         private bool IsTextFile(string extension)
         {
-            string[] textExtensions = { ".txt", ".log", ".md", ".cs", ".js", ".html", ".css", ".xml", ".json", ".yml", ".yaml", ".ini", ".cfg", ".conf" };
+            string[] textExtensions = { ".txt", ".log", ".md", ".ini", ".cfg", ".conf", ".bat", ".sh" };
             return textExtensions.Contains(extension);
+        }
+
+        private bool IsKnownBinaryFile(string extension)
+        {
+            string[] binaryExtensions = { ".exe", ".dll", ".mp3", ".mp4", ".avi", ".zip", ".rar", ".7z", ".pdf", ".docx", ".xlsx" };
+            return binaryExtensions.Contains(extension);
+        }
+
+        private bool IsTextFileContent(string filePath)
+        {
+            try
+            {
+                using var stream = File.OpenRead(filePath);
+                var buffer = new byte[1024];
+                var bytesRead = stream.Read(buffer, 0, buffer.Length);
+                
+                // Check for null bytes which indicate binary content
+                for (int i = 0; i < bytesRead; i++)
+                {
+                    if (buffer[i] == 0)
+                        return false;
+                }
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private bool IsImageFile(string extension)
         {
             string[] imageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".ico" };
             return imageExtensions.Contains(extension);
+        }
+
+        private void DisplayCodeFile(string filePath, string extension)
+        {
+            var content = File.ReadAllText(filePath);
+            CodeEditor.Text = content;
+            
+            // Set syntax highlighting based on extension
+            var highlightingName = extension switch
+            {
+                ".cs" => "C#",
+                ".js" or ".ts" => "JavaScript",
+                ".html" or ".htm" => "HTML",
+                ".css" => "CSS",
+                ".xml" => "XML",
+                ".json" => "JavaScript",
+                ".sql" => "SQL",
+                ".cpp" or ".c" or ".h" => "C++",
+                ".java" => "Java",
+                ".py" => "Python",
+                ".php" => "PHP",
+                _ => null
+            };
+            
+            if (!string.IsNullOrEmpty(highlightingName))
+            {
+                CodeEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition(highlightingName);
+            }
+            
+            CodeEditor.Visibility = Visibility.Visible;
+        }
+
+        private void DisplayBinaryFileStats(string filePath, string extension)
+        {
+            var fileInfo = new FileInfo(filePath);
+            var stats = new List<KeyValuePair<string, string>>
+            {
+                new("File Name", fileInfo.Name),
+                new("File Size", FormatFileSize(fileInfo.Length)),
+                new("Created", fileInfo.CreationTime.ToString("yyyy-MM-dd HH:mm:ss")),
+                new("Modified", fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")),
+                new("Extension", extension.ToUpper())
+            };
+
+            // Add specific stats for known binary types
+            try
+            {
+                switch (extension)
+                {
+                    case ".exe" or ".dll":
+                        AddExecutableStats(stats, filePath);
+                        break;
+                    case ".mp3":
+                        AddAudioStats(stats, filePath);
+                        break;
+                    case ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp":
+                        AddImageStats(stats, filePath);
+                        break;
+                }
+            }
+            catch
+            {
+                // Ignore errors when getting specific stats
+            }
+
+            StatsTitle.Text = $"File Information: {fileInfo.Name}";
+            StatsItems.ItemsSource = stats;
+            StatsScrollViewer.Visibility = Visibility.Visible;
+        }
+
+        private void AddExecutableStats(List<KeyValuePair<string, string>> stats, string filePath)
+        {
+            try
+            {
+                var versionInfo = FileVersionInfo.GetVersionInfo(filePath);
+                if (!string.IsNullOrEmpty(versionInfo.FileVersion))
+                    stats.Add(new("File Version", versionInfo.FileVersion));
+                if (!string.IsNullOrEmpty(versionInfo.ProductName))
+                    stats.Add(new("Product Name", versionInfo.ProductName));
+                if (!string.IsNullOrEmpty(versionInfo.CompanyName))
+                    stats.Add(new("Company", versionInfo.CompanyName));
+                if (!string.IsNullOrEmpty(versionInfo.FileDescription))
+                    stats.Add(new("Description", versionInfo.FileDescription));
+            }
+            catch
+            {
+                // Ignore version info errors
+            }
+        }
+
+        private void AddAudioStats(List<KeyValuePair<string, string>> stats, string filePath)
+        {
+            // Basic audio file stats - would need additional library for detailed metadata
+            stats.Add(new("Type", "Audio File"));
+        }
+
+        private void AddImageStats(List<KeyValuePair<string, string>> stats, string filePath)
+        {
+            try
+            {
+                using var stream = File.OpenRead(filePath);
+                var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.Default);
+                if (decoder.Frames.Count > 0)
+                {
+                    var frame = decoder.Frames[0];
+                    stats.Add(new("Dimensions", $"{frame.PixelWidth} x {frame.PixelHeight}"));
+                    stats.Add(new("DPI", $"{frame.DpiX:F0} x {frame.DpiY:F0}"));
+                    stats.Add(new("Pixel Format", frame.Format.ToString()));
+                }
+            }
+            catch
+            {
+                // Ignore image stats errors
+            }
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int counter = 0;
+            decimal number = bytes;
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number /= 1024;
+                counter++;
+            }
+            return $"{number:n1} {suffixes[counter]}";
         }
 
     }
