@@ -10,20 +10,7 @@
         <local:BoolToTypeConverter x:Key="BoolToTypeConverter"/>
     </Window.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        
-        <Menu Grid.Row="0">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Open" Click="OpenFile_Click"/>
-                <Separator/>
-                <MenuItem Header="E_xit" Click="Exit_Click"/>
-            </MenuItem>
-        </Menu>
-        
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200"/>
                 <ColumnDefinition Width="5"/>

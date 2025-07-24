@@ -236,24 +236,5 @@ namespace FileViewer
             return imageExtensions.Contains(extension);
         }
 
-        private void OpenFile_Click(object sender, RoutedEventArgs e)
-        {
-            var openFileDialog = new OpenFileDialog
-            {
-                Title = "Select a file to view",
-                Filter = "All files (*.*)|*.*|Text files (*.txt)|*.txt|Image files (*.jpg;*.png;*.gif;*.bmp)|*.jpg;*.png;*.gif;*.bmp"
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                var fileName = Path.GetFileName(openFileDialog.FileName);
-                OpenTab(openFileDialog.FileName, fileName, false);
-            }
-        }
-
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
     }
 }
