@@ -19,7 +19,6 @@
             
             <!-- Tab Panel on the left -->
             <StackPanel Grid.Column="0" Background="#F5F5F5">
-                <TextBlock Text="Open Items" FontWeight="Bold" Margin="10,10,10,5" FontSize="14"/>
                 <ListBox x:Name="TabListBox" 
                          SelectionChanged="TabListBox_SelectionChanged"
                          Background="Transparent"
