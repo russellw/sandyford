@@ -23,6 +23,7 @@ namespace FileViewer
         {
             InitializeComponent();
             InitializeFileTree();
+            TextViewer.AddHandler(ScrollViewer.MouseWheelEvent, new RoutedEventHandler(ScrollViewer_MouseWheel), true);
         }
 
         private void InitializeFileTree()
@@ -256,29 +257,29 @@ namespace FileViewer
             }
         }
 
+        private static readonly HashSet<string> CodeExtensions = new(new[] { ".cs", ".js", ".ts", ".html", ".css", ".xml", ".json", ".yml", ".yaml", ".cpp", ".c", ".h", ".java", ".py", ".rb", ".php", ".go", ".rs", ".sql" });
         private bool IsCodeFile(string extension)
         {
-            string[] codeExtensions = { ".cs", ".js", ".ts", ".html", ".css", ".xml", ".json", ".yml", ".yaml", ".cpp", ".c", ".h", ".java", ".py", ".rb", ".php", ".go", ".rs", ".sql" };
-            return codeExtensions.Contains(extension);
+            return CodeExtensions.Contains(extension);
         }
 
+        private static readonly HashSet<string> TextExtensions = new(new[] { ".txt", ".log", ".md", ".ini", ".cfg", ".conf", ".bat", ".sh" });
         private bool IsTextFile(string extension)
         {
-            string[] textExtensions = { ".txt", ".log", ".md", ".ini", ".cfg", ".conf", ".bat", ".sh" };
-            return textExtensions.Contains(extension);
+            return TextExtensions.Contains(extension);
         }
 
+        private static readonly HashSet<string> KnownBinaryExtensions = new(new[] { ".exe", ".dll", ".mp3", ".mp4", ".avi", ".zip", ".rar", ".7z", ".pdf", ".docx", ".xlsx" });
         private bool IsKnownBinaryFile(string extension)
         {
-            string[] binaryExtensions = { ".exe", ".dll", ".mp3", ".mp4", ".avi", ".zip", ".rar", ".7z", ".pdf", ".docx", ".xlsx" };
-            return binaryExtensions.Contains(extension);
+            return KnownBinaryExtensions.Contains(extension);
         }
 
         private bool IsTextFileContent(string filePath)
         {
             try
             {
-                using var stream = File.OpenRead(filePath);
+                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 var buffer = new byte[1024];
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
                 
@@ -297,10 +298,10 @@ namespace FileViewer
             }
         }
 
+        private static readonly HashSet<string> ImageExtensions = new(new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".ico" });
         private bool IsImageFile(string extension)
         {
-            string[] imageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".ico" };
-            return imageExtensions.Contains(extension);
+            return ImageExtensions.Contains(extension);
         }
 
         private void DisplayCodeFile(string filePath, string extension)
@@ -430,5 +431,12 @@ namespace FileViewer
             return $"{number:n1} {suffixes[counter]}";
         }
 
+        private void ScrollViewer_MouseWheel(object sender, RoutedEventArgs e)
+        {
+            var ee = (MouseWheelEventArgs)e;
+            var scv = (ScrollViewer)sender;
+            scv.ScrollToVerticalOffset(scv.VerticalOffset - ee.Delta);
+            e.Handled = true;
+        }
     }
 }
